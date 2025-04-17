@@ -1,4 +1,53 @@
+html, body
+{
+	height: 100%;
+	margin: 0;
+}
+
+html {
+	overflow: hidden;
+}
+
 body {
 	font-family: sans-serif;
 	text-align: center;
+	box-sizing: border-box;
+	background-color: #f9fafb;
+}
+
+.header {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 1000;
+    position: relative;
+    border-bottom: 1px solid var(--colorNeutralStroke2);
+}
+.page-name {
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	height: 100%;
+	font-weight: 600;
+	font-size: 20px;
+}
+
+.container {
+  overflow: auto;
+	height: 100vh;
+	padding: 20px;
+	align-content: flex-start;
+	flex-wrap: wrap;
+	border: 1px solid var(--solidNeutralStroke2);
+}
+
+.label {
+	text-align: start;
+}
+
+.row {
+		display: flex-inline;
+    justify-content: space-between;
 }

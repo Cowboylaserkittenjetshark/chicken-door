@@ -1,0 +1,3 @@
+[toolchain]
+profile = "default"
+targets = [ "wasm32-unknown-unknown", "aarch64-unknown-linux-gnu" ]

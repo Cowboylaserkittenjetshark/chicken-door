@@ -138,6 +138,7 @@
           devShellTools
           jujutsu
           dart-sass
+          binaryen
         ];
       };
 

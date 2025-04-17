@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-leptos = { version = "0.7.0" }
+leptos = "0.7.0"
 leptos_router = { version = "0.7.0" }
 axum = { version = "0.7", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true}
@@ -15,20 +15,30 @@ leptos_axum = { version = "0.7.0", optional = true }
 leptos_meta = { version = "0.7.0" }
 tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 wasm-bindgen = { version = "=0.2.100", optional = true }
+thaw = {version = "0.4.5", optional = true}
+chrono = { version = "0.4.40", features = ["serde"] }
+icondata = "0.5.0"
+serde = { version = "1.0.219", features = ["derive"]}
+toml = {version = "0.8.20", optional = true}
 
 [features]
 hydrate = [
     "leptos/hydrate",
     "dep:console_error_panic_hook",
     "dep:wasm-bindgen",
+    "dep:thaw",
+    "thaw/hydrate",
 ]
 ssr = [
     "dep:axum",
     "dep:tokio",
     "dep:leptos_axum",
+    "dep:thaw",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",
+    "thaw/ssr",
+    "dep:toml",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode
@@ -40,6 +50,8 @@ codegen-units = 1
 panic = "abort"
 
 [package.metadata.leptos]
+# bin-target-triple = "aarch64-unknown-linux-gnu"
+
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
 output-name = "chicken-door"
 
