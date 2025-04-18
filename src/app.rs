@@ -254,37 +254,55 @@ fn NavBar() -> impl IntoView {
     }
 }
 
-#[server]
+#[server(
+    name = CloseDoor,
+    endpoint = "close_door",
+)]
 async fn close() -> Result<(), ServerFnError> {
     println!("closing door");
     Ok(())
 }
 
-#[server]
+#[server(
+    name = OpenDoor,
+    endpoint = "open_door",
+)]
 async fn open() -> Result<(), ServerFnError> {
     println!("opening door");
     Ok(())
 }
 
-#[server]
+#[server(
+    name = ApplySettings,
+    endpoint = "apply_settings",
+)]
 async fn apply_settings() -> Result<(), ServerFnError> {
     println!("applying settings");
     Ok(())
 }
 
-#[server]
+#[server(
+    name = SetLightOpen,
+    endpoint = "set_light_open",
+)]
 async fn set_light_open() -> Result<(), ServerFnError> {
     println!("using current light sensor value for open threshold");
     Ok(())
 }
 
-#[server]
+#[server(
+    name = SetLightClose,
+    endpoint = "set_light_close",
+)]
 async fn set_light_close() -> Result<(), ServerFnError> {
     println!("using current light sensor value for close threshold");
     Ok(())
 }
 
-#[server]
+#[server(
+    name = GetSettings,
+    endpoint = "get_settings",
+)]
 async fn get_settings() -> Result<Settings, ServerFnError> {
     use std::fs::read_to_string;
     use std::path::Path;
@@ -300,7 +318,10 @@ async fn get_settings() -> Result<Settings, ServerFnError> {
     return Ok(settings);
 }
 
-#[server]
+#[server(
+    name = WriteSettings,
+    endpoint = "write_settings",
+)]
 async fn write_settings(settings: Settings) -> Result<(), ServerFnError> {
     use std::fs::write;
     use toml;

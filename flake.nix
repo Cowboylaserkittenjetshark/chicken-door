@@ -34,7 +34,8 @@
 
       inherit (pkgs) lib;
 
-      toolchain = fenix.packages.${system}.complete;
+      # toolchain = fenix.packages.${system}.complete;
+      toolchain = fenix.packages.${system}.stable;
 
       craneLib = crane.mkLib pkgs;
       src = craneLib.cleanCargoSource ./.;
@@ -61,6 +62,19 @@
         "rust-src"
         "rust-analyzer"
       ];
+
+      mkToolchain = fenix.packages.${system}.combine;
+      piTarget = fenix.packages.${system}.targets."armv7-unknown-linux-gnueabihf".stable;
+
+      mobileTargets = mkToolchain (with toolchain; [
+        cargo
+        rustc
+        rustfmt
+        rust-src
+        rust-analyzer
+        piTarget.rust-std
+      ]);
+
 
       cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
@@ -124,24 +138,101 @@
         drv = chicken-door;
       };
 
-      devShells.default = craneLib.devShell {
-        checks = self.checks.${system};
+      devShells.default = pkgs.mkShell {
+    strictDeps = true;
+    nativeBuildInputs = with pkgs; [
+      cargo-leptos
+      cargo-cross
+      rustup
+      rustPlatform.bindgenHook
+      dart-sass
+      binaryen
+    ];
+    # libraries here
+    buildInputs =
+      [
+      ];
+    RUSTC_VERSION = "stable";
+    # https://github.com/rust-lang/rust-bindgen#environment-variables
+    shellHook = ''
+      export PATH="''${CARGO_HOME:-~/.cargo}/bin":"$PATH"
+      export PATH="''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-${pkgs.stdenv.hostPlatform.rust.rustcTarget}/bin":"$PATH"
+    '';
+  };
+      # default = craneLib.devShell {
+      #   checks = self.checks.${system};
 
-        RUST_SRC_PATH = "${toolchain.rust-src}/lib/rustlib/src/rust/library";
+      #   RUST_SRC_PATH = "${toolchain.rust-src}/lib/rustlib/src/rust/library";
 
-        packages = with pkgs; [
-          cargo-leptos
-          leptosfmt
-          cargo-generate
-          lldb
-          lld
-          devShellTools
-          jujutsu
-          dart-sass
-          binaryen
-        ];
-      };
+      #   packages = with pkgs; [
+      #     cargo-leptos
+      #     rustup
+      #     leptosfmt
+      #     cargo-generate
+      #     lldb
+      #     lld
+      #     # devShellTools
+      #     mobileTargets
+      #     jujutsu
+      #     dart-sass
+      #     binaryen
+      #     cargo-cross
+      #   ];
+      # };
 
       formatter = pkgs.alejandra;
     });
 }
+# {
+#   description = "A Nix-flake-based Python development environment";
+
+#   inputs = {
+#     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    # crane.url = "github:ipetkov/crane";
+
+    # fenix = {
+    #   url = "github:nix-community/fenix";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    #   inputs.rust-analyzer-src.follows = "";
+    # };
+
+    # flake-utils.url = "github:numtide/flake-utils";
+
+    # advisory-db = {
+    #   url = "github:rustsec/advisory-db";
+    #   flake = false;
+    # };
+  # };
+
+#   outputs = { self, nixpkgs }:
+#     let
+#       supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+#       forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
+#         pkgs = import nixpkgs { inherit system; crossSystem = { config = "armv7-unknown-linux-gnueabihf"; };};
+#       });
+#     in
+#     {
+#       devShells = forEachSupportedSystem ({ pkgs }: {
+#         default = pkgs.mkShell {
+#           strictDeps = true;
+#           nativeBuildInputs = with pkgs; [
+#             cargo-leptos
+#             rustup
+#             rustPlatform.bindgenHook
+#             dart-sass
+#           ];
+#           # libraries here
+#           buildInputs =
+#             [
+#             ];
+#           RUSTC_VERSION = "stable";
+#           # https://github.com/rust-lang/rust-bindgen#environment-variables
+#           shellHook = ''
+#             export PATH="''${CARGO_HOME:-~/.cargo}/bin":"$PATH"
+#             export PATH="''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-${pkgs.stdenv.hostPlatform.rust.rustcTarget}/bin":"$PATH"
+#           '';
+#         };
+#       });
+#     };
+# }
