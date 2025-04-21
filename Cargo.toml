@@ -20,7 +20,7 @@ chrono = { version = "0.4.40", features = ["serde"] }
 icondata = "0.5.0"
 serde = { version = "1.0.219", features = ["derive"]}
 toml = {version = "0.8.20", optional = true}
-rppal = "0.22.1"
+rppal = { version = "0.22.1", optional = true }
 
 [features]
 hydrate = [
@@ -40,6 +40,7 @@ ssr = [
     "leptos_router/ssr",
     "thaw/ssr",
     "dep:toml",
+    "dep:rppal",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

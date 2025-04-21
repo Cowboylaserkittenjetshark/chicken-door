@@ -1,4 +1,6 @@
 
+const LIMIT_PIN: u8 = 24;
+
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
@@ -7,6 +9,8 @@ async fn main() {
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use chicken_door::app::*;
+
+
 
     let conf = get_configuration(Some("Cargo.toml")).unwrap();
     let addr = conf.leptos_options.site_addr;

@@ -2,7 +2,7 @@ use icondata;
 use leptos::{prelude::*, task::spawn_local};
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
-    components::{Route, Router, Routes},
+    components::{Route, Router, Routes, Redirect},
     hooks::use_navigate,
     StaticSegment,
 };
@@ -50,6 +50,7 @@ pub fn App() -> impl IntoView {
             <Router>
                 <main>
                     <Routes fallback=PageNotFound>
+                        <Route path=StaticSegment("/") view=|| view! {<Redirect path="/control" /> }/>
                         <Route path=StaticSegment("/control") view=ControlPanel />
                         <Route path=StaticSegment("/settings") view=SettingsPanel />
                     </Routes>
@@ -71,8 +72,10 @@ fn PageNotFound() -> impl IntoView {
 
 #[component]
 fn ControlPanel() -> impl IntoView {
-    let open_clicked = move |_| spawn_local(async { open().await.unwrap() });
-    let close_clicked = move |_| spawn_local(async { close().await.unwrap() });
+    // let open_clicked = move |_| spawn_local(async { open().await.unwrap() });
+    // let close_clicked = move |_| spawn_local(async { close().await.unwrap() });
+    let close_clicked = ServerAction::<Close>::new();
+    let open_clicked = ServerAction::<Open>::new();
 
     view! {
         <Layout>
@@ -82,8 +85,12 @@ fn ControlPanel() -> impl IntoView {
                     <CardHeader>
                         <b>"Control Panel"</b>
                     </CardHeader>
-                    <Button on_click=open_clicked>"Open Door"</Button>
-                    <Button on_click=close_clicked>"Close Door"</Button>
+                    <Button on_click=move |_| {
+                        open_clicked.dispatch(Open {});
+                    }>"Open Door"</Button>
+                    <Button on_click=move |_| {
+                        close_clicked.dispatch(Close {});
+                    }>"Close Door"</Button>
                 </Card>
             </Flex>
         </Layout>
@@ -93,11 +100,6 @@ fn ControlPanel() -> impl IntoView {
 #[component]
 fn SettingsPanel() -> impl IntoView {
     let (pending, set_pending) = signal(false);
-    // let apply = move |_| {
-    //     if !pending.get() {
-    //         spawn_local(async { apply_settings().await.unwrap() })
-    //     }
-    // };
     let write_settings = ServerAction::<WriteSettings>::new();
     let settings = Resource::new(
         move || {
@@ -146,7 +148,16 @@ fn SettingsPanel() -> impl IntoView {
                                                 </SliderLabel>
                                             </Slider>
                                             <Button>
-                                                // on_click=set_light_open
+                                                on_click=move |_| {
+                                                    spawn_local(async move {
+                                                        if let Ok(level) = light_level().await {
+                                                            open_light_level.set(level);
+                                                        }
+                                                    });
+                                                    // if let ok(level) = light_level().await {
+                                                    //     open_light_level.set(level);
+                                                    // }
+                                                }
                                                 "Use Current Reading"
                                             </Button>
                                         </Flex>
@@ -166,20 +177,22 @@ fn SettingsPanel() -> impl IntoView {
                                         <Button
                                             icon=icondata::BsCheckLg
                                             on_click=move |_| {
-                                                write_settings
-                                                    .dispatch(
-                                                        Settings {
-                                                            light_levels: LightLevels {
-                                                                close: close_light_level.get(),
-                                                                open: open_light_level.get(),
-                                                            },
-                                                            times: Times {
-                                                                open: open_time.get(),
-                                                                close: close_time.get(),
-                                                            },
-                                                        }
-                                                            .into(),
-                                                    );
+                                                if !pending.get() {
+                                                    write_settings
+                                                        .dispatch(
+                                                            Settings {
+                                                                light_levels: LightLevels {
+                                                                    close: close_light_level.get(),
+                                                                    open: open_light_level.get(),
+                                                                },
+                                                                times: Times {
+                                                                    open: open_time.get(),
+                                                                    close: close_time.get(),
+                                                                },
+                                                            }
+                                                                .into(),
+                                                        );
+                                                }
                                             }
                                         >
                                             "Apply"
@@ -254,21 +267,72 @@ fn NavBar() -> impl IntoView {
     }
 }
 
+const LIMIT_PIN: u8 = 24;
+const MOTOR_FLIP_FLOP_PIN: u8 = 5;
+const MOTOR_ENABLE_PIN: u8 = 6;
+const DOOR_CLOSE_SECS: u64 = 5;
+const MFF_SAFETY_MSECS: u64 = 250;
+const OPEN_TIMEOUT_SECS: u64 = 6;
+
 #[server(
-    name = CloseDoor,
+    name = Close,
     endpoint = "close_door",
 )]
 async fn close() -> Result<(), ServerFnError> {
-    println!("closing door");
+    use rppal::gpio::{Gpio, Trigger};
+    use std::time::Duration;
+    use std::thread;
+
+    let gpio = Gpio::new().expect("failed to open gpio interface");
+    let mut mff_pin = gpio.get(MOTOR_FLIP_FLOP_PIN).expect("failed to get motor flip flop pin").into_output();
+    let mut me_pin = gpio.get(MOTOR_ENABLE_PIN).expect("failed to get motor enable pin").into_output();
+    mff_pin.set_reset_on_drop(false);
+    me_pin.set_reset_on_drop(false);
+    
+    me_pin.set_low();
+    println!("Sleeping for {MFF_SAFETY_MSECS} milliseconds");
+    thread::sleep(Duration::from_millis(MFF_SAFETY_MSECS));
+    mff_pin.set_high();
+    me_pin.set_high();
+    println!("Sleeping for {DOOR_CLOSE_SECS} seconds");
+    thread::sleep(Duration::from_secs(DOOR_CLOSE_SECS));
+    mff_pin.set_low();
+    me_pin.set_low();
+    println!("Finished close routine");
     Ok(())
 }
 
 #[server(
-    name = OpenDoor,
+    name = Open,
     endpoint = "open_door",
 )]
 async fn open() -> Result<(), ServerFnError> {
-    println!("opening door");
+    use rppal::gpio::{Gpio, Trigger};
+    use std::time::Duration;
+    use std::thread;
+
+    let gpio = Gpio::new().expect("failed to open gpio interface");
+    let mut limit_pin = gpio.get(LIMIT_PIN).expect("failed to get limit switch pin").into_input_pullup();
+    let mut mff_pin = gpio.get(MOTOR_FLIP_FLOP_PIN).expect("failed to get motor flip flop pin").into_output();
+    let mut me_pin = gpio.get(MOTOR_ENABLE_PIN).expect("failed to get motor enable pin").into_output();
+    mff_pin.set_reset_on_drop(false);
+    me_pin.set_reset_on_drop(false);
+    limit_pin.set_interrupt(Trigger::Both, Some(Duration::from_millis(10)));
+    
+    me_pin.set_low();
+    println!("Sleeping for {MFF_SAFETY_MSECS} milliseconds");
+    thread::sleep(Duration::from_millis(MFF_SAFETY_MSECS));
+    mff_pin.set_low();
+    me_pin.set_high();
+    println!("Waiting for switch interrupt (timout {OPEN_TIMEOUT_SECS} seconds)");
+    match limit_pin.poll_interrupt(true, Some(Duration::from_secs(OPEN_TIMEOUT_SECS))) {
+        Ok(None) => println!("Timeout reached, switch was not hit"),
+        Ok(Some(_)) => println!("Limit switch hit, door opened"),
+        _ => println!("Error waiting for interrupt"),
+    }
+    mff_pin.set_low();
+    me_pin.set_low();
+    println!("Finished open routine");
     Ok(())
 }
 
@@ -371,4 +435,25 @@ impl Default for Times {
             close: chrono::NaiveTime::from_hms_opt(18, 0, 0).unwrap(),
         }
     }
+}
+
+#[server(
+    name = LightLevel,
+    endpoint = "light_level",
+)]
+async fn light_level() -> Result<f64, ServerFnError> {
+    use rppal::spi::{Bus, Mode, Segment, SlaveSelect, Spi};
+
+    let mut spi = Spi::new(Bus::Spi0, SlaveSelect::Ss0, 1_000_000, Mode::Mode0)?;
+    let write_buffer: [u8; 3] = [6, 0, 0];
+    let mut read_buffer = [0u8; 5];
+    
+    spi.transfer(&mut read_buffer, &write_buffer);
+    
+    let mut result: u32 = 0;
+    for (i, byte) in read_buffer.iter().enumerate() {
+        result |= (u32::from(*byte) << (u32::from(2 - i as u8) * 8)) as u32;
+    }
+    let result = (1.0 - ((result as f64)/4096.0)) * 100.0;
+    Ok(result)
 }

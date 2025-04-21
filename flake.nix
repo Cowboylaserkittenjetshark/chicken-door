@@ -35,7 +35,8 @@
       inherit (pkgs) lib;
 
       # toolchain = fenix.packages.${system}.complete;
-      toolchain = fenix.packages.${system}.stable;
+      toolchain = fenix.packages.${system}.complete;
+      # toolchain = fenix.packages.${system}.stable;
 
       craneLib = crane.mkLib pkgs;
       src = craneLib.cleanCargoSource ./.;
@@ -64,7 +65,8 @@
       ];
 
       mkToolchain = fenix.packages.${system}.combine;
-      piTarget = fenix.packages.${system}.targets."armv7-unknown-linux-gnueabihf".stable;
+      # piTarget = fenix.packages.${system}.targets."armv7-unknown-linux-gnueabihf".stable;
+      # piTarget = fenix.packages.${system}.targets."armv7-unknown-linux-gnueabihf".stable;
 
       mobileTargets = mkToolchain (with toolchain; [
         cargo
@@ -72,7 +74,7 @@
         rustfmt
         rust-src
         rust-analyzer
-        piTarget.rust-std
+        # piTarget.rust-std
       ]);
 
 
@@ -147,13 +149,15 @@
       rustPlatform.bindgenHook
       dart-sass
       binaryen
+      # mobileTargets
     ];
     # libraries here
     buildInputs =
       [
       ];
-    RUSTC_VERSION = "stable";
-    # https://github.com/rust-lang/rust-bindgen#environment-variables
+    RUSTC_VERSION = "nightly";
+    # RUSTC_VERSION = "stable";
+    # # https://github.com/rust-lang/rust-bindgen#environment-variables
     shellHook = ''
       export PATH="''${CARGO_HOME:-~/.cargo}/bin":"$PATH"
       export PATH="''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-${pkgs.stdenv.hostPlatform.rust.rustcTarget}/bin":"$PATH"
