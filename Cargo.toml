@@ -13,14 +13,17 @@ axum = { version = "0.7", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true}
 leptos_axum = { version = "0.7.0", optional = true }
 leptos_meta = { version = "0.7.0" }
-tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "sync"], optional = true }
 wasm-bindgen = { version = "=0.2.100", optional = true }
 thaw = {version = "0.4.5", optional = true}
 chrono = { version = "0.4.40", features = ["serde"] }
 icondata = "0.5.0"
-serde = { version = "1.0.219", features = ["derive"]}
+serde = { version = "1.0.219", features = ["derive"] }
 toml = {version = "0.8.20", optional = true}
 rppal = { version = "0.22.1", optional = true }
+thiserror = "2.0.12"
+notify = "8.0.0"
+# watchfile = { version = "0.1.1", default-features = false, features = ["toml"], optional = true }
 
 [features]
 hydrate = [
@@ -41,6 +44,7 @@ ssr = [
     "thaw/ssr",
     "dep:toml",
     "dep:rppal",
+    # "dep:watchfile"
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

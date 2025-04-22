@@ -1,4 +1,3 @@
-
 const LIMIT_PIN: u8 = 24;
 
 #[cfg(feature = "ssr")]
@@ -9,8 +8,46 @@ async fn main() {
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use chicken_door::app::*;
+    use chicken_door::settings::Settings;
+    use std::time::Duration;
+    use std::ops::Deref;
+    use tokio::sync::mpsc;
+    use toml;
+    use notify::{Config, Event,EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+    use std::path::Path;
+    use std::fs::read_to_string;
 
-
+    tokio::spawn(async move {
+        let settings_file = Path::new("./settings.toml");
+        let mut settings: Settings;
+        if settings_file.exists() {
+            let settings_str = read_to_string("settings.toml").unwrap();
+            settings = toml::from_str(settings_str.as_str()).unwrap();
+        } else {
+            settings = Settings::default();
+        }
+        
+        let mut watcher = RecommendedWatcher::new(
+            move |res| {
+                match res {
+                    Ok(Event { kind: EventKind::Modify(_), ..}) => {
+                        println!("Reloading settings");
+                        let settings_str = read_to_string("settings.toml").unwrap();
+                        settings = toml::from_str(settings_str.as_str()).unwrap();
+                    },
+                    Err(e) => println!("watch error: {:?}", e),
+                    _ => println!("Unhandled watcher event"),
+                }
+            },
+            Config::default(),
+        ).unwrap();
+        watcher.watch(settings_file, RecursiveMode::NonRecursive);
+        
+        loop {
+            println!("Sleeping 2 seconds");
+            tokio::time::sleep(Duration::from_secs(2)).await;
+        }
+    });
 
     let conf = get_configuration(Some("Cargo.toml")).unwrap();
     let addr = conf.leptos_options.site_addr;
@@ -41,3 +78,4 @@ pub fn main() {
     // unless we want this to work with e.g., Trunk for pure client-side testing
     // see lib.rs for hydration function instead
 }
+

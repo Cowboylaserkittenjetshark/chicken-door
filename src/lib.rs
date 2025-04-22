@@ -1,4 +1,7 @@
 pub mod app;
+#[cfg(feature = "ssr")]
+pub mod door;
+pub mod settings;
 
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]

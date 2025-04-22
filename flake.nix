@@ -149,6 +149,7 @@
       rustPlatform.bindgenHook
       dart-sass
       binaryen
+      rust-analyzer
       # mobileTargets
     ];
     # libraries here
