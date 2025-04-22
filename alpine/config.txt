@@ -1,0 +1,4 @@
+kernel=boot/vmlinuz-rpi
+initramfs boot/initramfs-rpi
+arm_64bit=1
+include usercfg.txt

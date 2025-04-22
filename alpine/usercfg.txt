@@ -1,0 +1,7 @@
+camera_auto_detect=0
+display_auto_detect=0
+dtparam=audio=off
+dtparam=hdmi=off
+dtparam=krnbt=off
+dtoverlay=disable-bt
+dtparam=spi=on

@@ -1,91 +1,30 @@
-<picture>
-    <source srcset="https://raw.githubusercontent.com/leptos-rs/leptos/main/docs/logos/Leptos_logo_Solid_White.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://raw.githubusercontent.com/leptos-rs/leptos/main/docs/logos/Leptos_logo_RGB.svg" alt="Leptos Logo">
-</picture>
+# Chicken Door
+This repo contains components for an automatic chicken coop door, including:
+- A daemon/web server for automation and user interface
+- An (outdated) simulation of the simple motor controller
+    - Can be imported to [falstad](https://www.falstad.com/circuit/circuitjs.html)
+- Alpine Linux configuration
+## Compiling the server
+Compiling requires `cargo-leptos` and optionally `cross` for cross compilation (recommended).
 
-# Leptos Axum Starter Template
+1. Set `bin-target-triple` in `Cargo.toml` to the correct target for your control board
+	- The current target is for a Raspberry Pi 3 running Alpine
+2. `LEPTOS_BIN_CARGO_COMMAND=cross cargo leptos build --release`
+## Deploying the server
+The following items must be copied to your target:
+1. The server binary: `target/<your target>/release/chicken-door`
+2. The site directory: `target/<your target>/release/chicken-door`
+3. This repo's Cargo.toml
 
-This is a template for use with the [Leptos](https://github.com/leptos-rs/leptos) web framework and the [cargo-leptos](https://github.com/akesson/cargo-leptos) tool using [Axum](https://github.com/tokio-rs/axum).
-
-## Creating your template repo
-
-If you don't have `cargo-leptos` installed you can install it with
-
+Example:
 ```bash
-cargo install cargo-leptos --locked
+TARGET="aarch64-unknown-linux-musl"
+DEPLOY_DIR="/root"
+
+scp target/$TARGET/release/chicken-door root@chickendoor:$DEPLOY_DIR
+scp -r target/site/ root@chickendoor:$DEPLOY_DIR/target/site
+scp Cargo.toml root@chickendoor:$DEPLOY_DIR
 ```
 
-Then run
-```bash
-cargo leptos new --git https://github.com/leptos-rs/start-axum
-```
-
-to generate a new project template.
-
-```bash
-cd chicken-door
-```
-
-to go to your newly created project.  
-Feel free to explore the project structure, but the best place to start with your application code is in `src/app.rs`.  
-Addtionally, Cargo.toml may need updating as new versions of the dependencies are released, especially if things are not working after a `cargo update`.
-
-## Running your project
-
-```bash
-cargo leptos watch
-```
-
-## Installing Additional Tools
-
-By default, `cargo-leptos` uses `nightly` Rust, `cargo-generate`, and `sass`. If you run into any trouble, you may need to install one or more of these tools.
-
-1. `rustup toolchain install nightly --allow-downgrade` - make sure you have Rust nightly
-2. `rustup target add wasm32-unknown-unknown` - add the ability to compile Rust to WebAssembly
-3. `cargo install cargo-generate` - install `cargo-generate` binary (should be installed automatically in future)
-4. `npm install -g sass` - install `dart-sass` (should be optional in future
-5. Run `npm install` in end2end subdirectory before test
-
-## Compiling for Release
-```bash
-cargo leptos build --release
-```
-
-Will generate your server binary in target/server/release and your site package in target/site
-
-## Testing Your Project
-```bash
-cargo leptos end-to-end
-```
-
-```bash
-cargo leptos end-to-end --release
-```
-
-Cargo-leptos uses Playwright as the end-to-end test tool.  
-Tests are located in end2end/tests directory.
-
-## Executing a Server on a Remote Machine Without the Toolchain
-After running a `cargo leptos build --release` the minimum files needed are:
-
-1. The server binary located in `target/server/release`
-2. The `site` directory and all files within located in `target/site`
-
-Copy these files to your remote server. The directory structure should be:
-```text
-chicken-door
-site/
-```
-Set the following environment variables (updating for your project as needed):
-```sh
-export LEPTOS_OUTPUT_NAME="chicken-door"
-export LEPTOS_SITE_ROOT="site"
-export LEPTOS_SITE_PKG_DIR="pkg"
-export LEPTOS_SITE_ADDR="127.0.0.1:3000"
-export LEPTOS_RELOAD_PORT="3001"
-```
-Finally, run the server binary.
-
-## Licensing
-
-This template itself is released under the Unlicense. You should replace the LICENSE for your own application with an appropriate license if you plan to release it publicly.
+## Running
+Run the binary on the target device. The web ui will be available at the printed address.
