@@ -72,8 +72,6 @@ fn PageNotFound() -> impl IntoView {
 
 #[component]
 fn ControlPanel() -> impl IntoView {
-    // let open_clicked = move |_| spawn_local(async { open().await.unwrap() });
-    // let close_clicked = move |_| spawn_local(async { close().await.unwrap() });
     let close_clicked = ServerAction::<Close>::new();
     let open_clicked = ServerAction::<Open>::new();
 

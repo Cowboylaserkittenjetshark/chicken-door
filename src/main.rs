@@ -1,4 +1,4 @@
-const LIMIT_PIN: u8 = 24;
+const POLL_STATE_SECS: u64 = 5;
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
@@ -9,23 +9,26 @@ async fn main() {
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use chicken_door::app::*;
     use chicken_door::settings::Settings;
+    use chicken_door::door::{open, close, light_level};
     use std::time::Duration;
-    use std::ops::Deref;
-    use tokio::sync::mpsc;
     use toml;
     use notify::{Config, Event,EventKind, RecommendedWatcher, RecursiveMode, Watcher};
     use std::path::Path;
     use std::fs::read_to_string;
+    use chrono::Local;
+    use std::sync::{Arc, Mutex};
 
     tokio::spawn(async move {
         let settings_file = Path::new("./settings.toml");
-        let mut settings: Settings;
+        let settings: Arc<Mutex<Settings>>;
         if settings_file.exists() {
             let settings_str = read_to_string("settings.toml").unwrap();
-            settings = toml::from_str(settings_str.as_str()).unwrap();
+            settings = Arc::new(Mutex::new(toml::from_str::<Settings>(settings_str.as_str()).unwrap()));
         } else {
-            settings = Settings::default();
+            settings = Arc::new(Mutex::new(Settings::default()));
         }
+
+        let settings_clone = settings.clone();
         
         let mut watcher = RecommendedWatcher::new(
             move |res| {
@@ -33,7 +36,7 @@ async fn main() {
                     Ok(Event { kind: EventKind::Modify(_), ..}) => {
                         println!("Reloading settings");
                         let settings_str = read_to_string("settings.toml").unwrap();
-                        settings = toml::from_str(settings_str.as_str()).unwrap();
+                        *settings_clone.lock().unwrap() = toml::from_str(settings_str.as_str()).unwrap();
                     },
                     Err(e) => println!("watch error: {:?}", e),
                     _ => println!("Unhandled watcher event"),
@@ -44,8 +47,24 @@ async fn main() {
         watcher.watch(settings_file, RecursiveMode::NonRecursive);
         
         loop {
-            println!("Sleeping 2 seconds");
-            tokio::time::sleep(Duration::from_secs(2)).await;
+            if let Ok(current_light_level) = light_level() {
+                let current_time = Local::now().time();
+                
+                let settings = settings.lock().unwrap();
+                let open_time = settings.times.open;
+                let close_time = settings.times.close;
+                let open_light_level = settings.light_levels.open;
+                let close_light_level = settings.light_levels.close;
+
+                if current_time >= close_time || current_light_level <= close_light_level {
+                    close();
+                } else if current_time >= open_time || current_light_level >= open_light_level {
+                    open();
+                }
+            }
+            // if settings.light_lel
+            println!("Sleeping {POLL_STATE_SECS} seconds");
+            tokio::time::sleep(Duration::from_secs(POLL_STATE_SECS)).await;
         }
     });
 
