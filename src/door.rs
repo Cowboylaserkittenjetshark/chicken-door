@@ -70,8 +70,17 @@ pub fn open() {
                     Ok(Some(_)) => println!("Limit switch hit, door opened"),
                     _ => println!("Error waiting for interrupt"),
                 }
-                mff_pin.set_low();
                 me_pin.set_low();
+                println!("Sleeping for {MFF_SAFETY_MSECS} milliseconds");
+                thread::sleep(Duration::from_millis(MFF_SAFETY_MSECS));
+                mff_pin.set_high();
+                me_pin.set_high();
+                println!("Sleeping for 1/10 second");
+                thread::sleep(Duration::from_millis(50));
+                me_pin.set_low();
+                println!("Sleeping for {MFF_SAFETY_MSECS} milliseconds");
+                thread::sleep(Duration::from_millis(MFF_SAFETY_MSECS));
+                mff_pin.set_low();
                 *guard = State::Open;
                 println!("Finished open routine");
             },
