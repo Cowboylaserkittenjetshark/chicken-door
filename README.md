@@ -1,9 +1,10 @@
 # Chicken Door
 This repo contains components for an automatic chicken coop door, including:
 - A daemon/web server for automation and user interface
+- A schematic of the electronics
+- Alpine Linux configuration
 - An (outdated) simulation of the simple motor controller
     - Can be imported to [falstad](https://www.falstad.com/circuit/circuitjs.html)
-- Alpine Linux configuration
 ## Compiling the server
 Compiling requires `cargo-leptos` and optionally `cross` for cross compilation (recommended).
 
